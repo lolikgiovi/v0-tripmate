@@ -29,5 +29,6 @@ export interface Expense {
   date: string
   category?: string
   paidBy: string
+  participants: string[] // Add this line to track who participated in the expense
   notes?: string
 }

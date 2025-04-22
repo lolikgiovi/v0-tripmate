@@ -24,32 +24,42 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
     calculateSettlements()
   }, [trip.expenses])
 
+  // Replace the calculateSettlements function with this updated version
   const calculateSettlements = () => {
     if (trip.expenses.length === 0) {
       setSettlements([])
       return
     }
 
-    // Calculate how much each person paid
+    // Calculate how much each person paid and owes
     const paid: Record<string, number> = {}
+    const owes: Record<string, number> = {}
+
+    // Initialize with zero values
     trip.travelers.forEach((traveler) => {
       paid[traveler] = 0
+      owes[traveler] = 0
     })
 
+    // Calculate what each person paid
     trip.expenses.forEach((expense) => {
       paid[expense.paidBy] = (paid[expense.paidBy] || 0) + expense.amount
     })
 
-    // Calculate total expenses
-    const totalExpenses = Object.values(paid).reduce((sum, amount) => sum + amount, 0)
+    // Calculate what each person owes based on participation
+    trip.expenses.forEach((expense) => {
+      const participants = expense.participants || trip.travelers
+      const sharePerPerson = expense.amount / participants.length
 
-    // Calculate how much each person should have paid (equal split)
-    const fairShare = totalExpenses / trip.travelers.length
+      participants.forEach((participant) => {
+        owes[participant] = (owes[participant] || 0) + sharePerPerson
+      })
+    })
 
-    // Calculate balances (positive means they paid more than their share)
+    // Calculate net balances (positive means they are owed money)
     const balances: Record<string, number> = {}
     trip.travelers.forEach((traveler) => {
-      balances[traveler] = paid[traveler] - fairShare
+      balances[traveler] = paid[traveler] - owes[traveler]
     })
 
     // Calculate settlements
@@ -181,6 +191,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
             </Card>
           </div>
 
+          {/* Update the "Who Paid What" card to show both paid and owed amounts */}
           <Card>
             <CardHeader>
               <CardTitle>Who Paid What</CardTitle>
@@ -188,14 +199,28 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
             <CardContent>
               <div className="space-y-2">
                 {trip.travelers.map((traveler) => {
-                  const paid = expensesByTraveler[traveler] || 0
-                  const diff = paid - fairShare
+                  // Calculate what each person paid
+                  const paid = trip.expenses
+                    .filter((expense) => expense.paidBy === traveler)
+                    .reduce((sum, expense) => sum + expense.amount, 0)
+
+                  // Calculate what each person owes based on participation
+                  const owes = trip.expenses
+                    .filter((expense) => expense.participants?.includes(traveler) || (!expense.participants && true)) // If no participants specified, include all
+                    .reduce((sum, expense) => {
+                      const participants = expense.participants || trip.travelers
+                      return sum + expense.amount / participants.length
+                    }, 0)
+
+                  const diff = paid - owes
 
                   return (
                     <div key={traveler} className="flex items-center justify-between">
                       <div className="font-medium">{traveler}</div>
                       <div className="flex items-center gap-2">
-                        <span>${paid.toFixed(2)}</span>
+                        <span>Paid: ${paid.toFixed(2)}</span>
+                        <span className="text-muted-foreground">|</span>
+                        <span>Owes: ${owes.toFixed(2)}</span>
                         <span className="text-muted-foreground">|</span>
                         <span className={diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : ""}>
                           {diff > 0 ? "+" : ""}

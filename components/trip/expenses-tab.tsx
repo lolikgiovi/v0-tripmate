@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Receipt, Calendar, DollarSign, User, Pencil, Trash2 } from "lucide-react"
+import { PlusCircle, Receipt, Calendar, DollarSign, User, Pencil, Trash2, Users } from "lucide-react"
 import type { Expense, Trip } from "@/lib/types"
 import { generateId, formatDate } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
@@ -29,16 +29,22 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   const [paidBy, setPaidBy] = useState("")
   const [notes, setNotes] = useState("")
 
+  // Add participants state
+  const [participants, setParticipants] = useState<string[]>([])
+
+  // Update resetForm to include participants
   const resetForm = () => {
     setTitle("")
     setAmount("")
     setDate("")
     setCategory("")
     setPaidBy("")
+    setParticipants([])
     setNotes("")
     setCurrentExpense(null)
   }
 
+  // Update openEditDialog to include participants
   const openEditDialog = (expense: Expense) => {
     setCurrentExpense(expense)
     setTitle(expense.title)
@@ -46,13 +52,15 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     setDate(expense.date)
     setCategory(expense.category || "")
     setPaidBy(expense.paidBy)
+    setParticipants(expense.participants || [])
     setNotes(expense.notes || "")
     setIsEditDialogOpen(true)
   }
 
+  // Update handleAddExpense to include participants
   const handleAddExpense = () => {
-    if (!title || !amount || !date || !paidBy) {
-      alert("Please fill in all required fields")
+    if (!title || !amount || !date || !paidBy || participants.length === 0) {
+      alert("Please fill in all required fields and select at least one participant")
       return
     }
 
@@ -63,6 +71,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
       date,
       category: category || undefined,
       paidBy,
+      participants,
       notes: notes || undefined,
     }
 
@@ -76,9 +85,10 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     resetForm()
   }
 
+  // Update handleEditExpense to include participants
   const handleEditExpense = () => {
-    if (!currentExpense || !title || !amount || !date || !paidBy) {
-      alert("Please fill in all required fields")
+    if (!currentExpense || !title || !amount || !date || !paidBy || participants.length === 0) {
+      alert("Please fill in all required fields and select at least one participant")
       return
     }
 
@@ -89,6 +99,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
       date,
       category: category || undefined,
       paidBy,
+      participants,
       notes: notes || undefined,
     }
 
@@ -111,6 +122,24 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
         expenses: trip.expenses.filter((expense) => expense.id !== id),
       }
       updateTrip(updatedTrip)
+    }
+  }
+
+  // Add a function to toggle "All" participants
+  const toggleAllParticipants = () => {
+    if (participants.length === trip.travelers.length) {
+      setParticipants([])
+    } else {
+      setParticipants([...trip.travelers])
+    }
+  }
+
+  // Add a function to toggle individual participant
+  const toggleParticipant = (traveler: string) => {
+    if (participants.includes(traveler)) {
+      setParticipants(participants.filter((p) => p !== traveler))
+    } else {
+      setParticipants([...participants, traveler])
     }
   }
 
@@ -228,6 +257,40 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                 </Select>
               </div>
 
+              {/* Participants Section */}
+              <div className="space-y-2">
+                <Label>Participants *</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant={participants.length === trip.travelers.length ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleAllParticipants}
+                      className={
+                        participants.length === trip.travelers.length ? "bg-emerald-500 hover:bg-emerald-600" : ""
+                      }
+                    >
+                      All Travelers
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {trip.travelers.map((traveler) => (
+                      <Button
+                        key={traveler}
+                        type="button"
+                        variant={participants.includes(traveler) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleParticipant(traveler)}
+                        className={participants.includes(traveler) ? "bg-emerald-500 hover:bg-emerald-600" : ""}
+                      >
+                        {traveler}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
                 <Input
@@ -324,6 +387,40 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Participants Section */}
+              <div className="space-y-2">
+                <Label>Participants *</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant={participants.length === trip.travelers.length ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleAllParticipants}
+                      className={
+                        participants.length === trip.travelers.length ? "bg-emerald-500 hover:bg-emerald-600" : ""
+                      }
+                    >
+                      All Travelers
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    {trip.travelers.map((traveler) => (
+                      <Button
+                        key={traveler}
+                        type="button"
+                        variant={participants.includes(traveler) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => toggleParticipant(traveler)}
+                        className={participants.includes(traveler) ? "bg-emerald-500 hover:bg-emerald-600" : ""}
+                      >
+                        {traveler}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -452,10 +549,26 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                         <User className="h-4 w-4 mr-1 text-emerald-500" />
                         <span>Paid by {expense.paidBy}</span>
                       </div>
+                      {expense.participants && (
+                        <div className="flex items-center mt-1">
+                          <Users className="h-4 w-4 mr-1 text-emerald-500" />
+                          <span>
+                            {expense.participants.length === trip.travelers.length
+                              ? "All travelers"
+                              : expense.participants.join(", ")}
+                          </span>
+                        </div>
+                      )}
                       {expense.category && (
                         <div className="flex items-center">
                           <Receipt className="h-4 w-4 mr-1 text-emerald-500" />
                           <span>{expense.category}</span>
+                        </div>
+                      )}
+                      {expense.participants && expense.participants.length > 0 && (
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-1 text-emerald-500" />
+                          <span>Shared with {expense.participants.join(", ")}</span>
                         </div>
                       )}
                     </div>

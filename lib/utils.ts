@@ -19,7 +19,25 @@ export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("en-US", options)
 }
 
-// Local storage functions
+// Add this function to ensure backward compatibility with existing trips
+export function migrateTrip(trip: any): Trip {
+  // Ensure all expenses have participants
+  if (trip.expenses) {
+    trip.expenses = trip.expenses.map((expense: any) => {
+      if (!expense.participants) {
+        return {
+          ...expense,
+          participants: [...trip.travelers], // Default to all travelers
+        }
+      }
+      return expense
+    })
+  }
+
+  return trip as Trip
+}
+
+// Update the getTrips function to use the migration
 export function getTrips(): Trip[] {
   if (typeof window === "undefined") return []
 
@@ -27,7 +45,9 @@ export function getTrips(): Trip[] {
   if (!tripsJson) return []
 
   try {
-    return JSON.parse(tripsJson)
+    const trips = JSON.parse(tripsJson)
+    // Migrate each trip to ensure it has the latest structure
+    return trips.map(migrateTrip)
   } catch (error) {
     console.error("Error parsing trips from localStorage", error)
     return []
