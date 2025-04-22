@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChevronLeft, Calendar, MapPin, Users, DollarSign } from "lucide-react"
 import type { Trip } from "@/lib/types"
-import { formatDate, getTrips, saveTrips } from "@/lib/utils"
+import { formatDate, getTrips, saveTrips, formatCurrency } from "@/lib/utils"
 import { AgendaTab } from "@/components/trip/agenda-tab"
 import { ExpensesTab } from "@/components/trip/expenses-tab"
 import { BillSplitTab } from "@/components/trip/bill-split-tab"
+import { EditTripDialog } from "@/components/trip/edit-trip-dialog"
 
 export default function TripDetails({ params }: { params: { id: string } }) {
   const [trip, setTrip] = useState<Trip | null>(null)
@@ -56,9 +57,12 @@ export default function TripDetails({ params }: { params: { id: string } }) {
       </Button>
 
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-2xl">{trip.name}</CardTitle>
-          <CardDescription>{trip.description}</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle className="text-2xl">{trip.name}</CardTitle>
+            <CardDescription>{trip.description}</CardDescription>
+          </div>
+          <EditTripDialog trip={trip} updateTrip={updateTrip} />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -81,15 +85,15 @@ export default function TripDetails({ params }: { params: { id: string } }) {
             <div className="space-y-2">
               <div className="flex items-center">
                 <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
-                <span>Total Budget: ${totalBudget.toFixed(2)}</span>
+                <span>Total Budget: {formatCurrency(totalBudget)}</span>
               </div>
               <div className="flex items-center">
                 <DollarSign className="h-4 w-4 mr-2 text-red-500" />
-                <span>Total Spent: ${totalSpent.toFixed(2)}</span>
+                <span>Total Spent: {formatCurrency(totalSpent)}</span>
               </div>
               <div className="flex items-center">
                 <DollarSign className="h-4 w-4 mr-2 text-blue-500" />
-                <span>Remaining: ${remainingBudget.toFixed(2)}</span>
+                <span>Remaining: {formatCurrency(remainingBudget)}</span>
               </div>
             </div>
           </div>

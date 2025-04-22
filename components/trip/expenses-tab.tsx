@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle, Receipt, Calendar, DollarSign, User, Pencil, Trash2, Users } from "lucide-react"
 import type { Expense, Trip } from "@/lib/types"
-import { generateId, formatDate } from "@/lib/utils"
+import { generateId, formatDate, formatCurrency } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 
 interface ExpensesTabProps {
@@ -461,7 +461,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${totalExpenses.toFixed(2)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(totalExpenses)}</p>
           </CardContent>
         </Card>
 
@@ -479,10 +479,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                   {Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1])[0][0]}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  $
-                  {Object.entries(expensesByCategory)
-                    .sort((a, b) => b[1] - a[1])[0][1]
-                    .toFixed(2)}
+                  {formatCurrency(Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1])[0][1])}
                 </p>
               </div>
             ) : (
@@ -505,10 +502,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                   {Object.entries(expensesByTraveler).sort((a, b) => b[1] - a[1])[0][0]}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  $
-                  {Object.entries(expensesByTraveler)
-                    .sort((a, b) => b[1] - a[1])[0][1]
-                    .toFixed(2)}
+                  {formatCurrency(Object.entries(expensesByTraveler).sort((a, b) => b[1] - a[1])[0][1])}
                 </p>
               </div>
             ) : (
@@ -539,7 +533,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                       <div className="flex items-center">
                         <DollarSign className="h-4 w-4 mr-1 text-emerald-500" />
-                        <span>${expense.amount.toFixed(2)}</span>
+                        <span>{formatCurrency(expense.amount)}</span>
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1 text-emerald-500" />

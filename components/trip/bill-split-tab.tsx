@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DollarSign, ArrowRight, RefreshCw } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { EmptyState } from "@/components/empty-state"
+import { formatCurrency } from "@/lib/utils"
 
 interface BillSplitTabProps {
   trip: Trip
@@ -167,7 +168,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
                 <CardTitle className="text-base">Total Trip Expenses</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">${totalExpenses.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalExpenses)}</p>
               </CardContent>
             </Card>
 
@@ -176,7 +177,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
                 <CardTitle className="text-base">Fair Share Per Person</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold">${fairShare.toFixed(2)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(fairShare)}</p>
                 <p className="text-sm text-muted-foreground">{trip.travelers.length} travelers</p>
               </CardContent>
             </Card>
@@ -218,13 +219,13 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
                     <div key={traveler} className="flex items-center justify-between">
                       <div className="font-medium">{traveler}</div>
                       <div className="flex items-center gap-2">
-                        <span>Paid: ${paid.toFixed(2)}</span>
+                        <span>Paid: {formatCurrency(paid)}</span>
                         <span className="text-muted-foreground">|</span>
-                        <span>Owes: ${owes.toFixed(2)}</span>
+                        <span>Owes: {formatCurrency(owes)}</span>
                         <span className="text-muted-foreground">|</span>
                         <span className={diff > 0 ? "text-emerald-500" : diff < 0 ? "text-red-500" : ""}>
                           {diff > 0 ? "+" : ""}
-                          {diff.toFixed(2)}
+                          {formatCurrency(Math.abs(diff))}
                         </span>
                       </div>
                     </div>
@@ -248,7 +249,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
                       <div className="font-medium">{settlement.from}</div>
                       <div className="flex items-center gap-2">
                         <ArrowRight className="h-4 w-4 text-emerald-500" />
-                        <span className="font-bold">${settlement.amount.toFixed(2)}</span>
+                        <span className="font-bold">{formatCurrency(settlement.amount)}</span>
                         <ArrowRight className="h-4 w-4 text-emerald-500" />
                       </div>
                       <div className="font-medium">{settlement.to}</div>

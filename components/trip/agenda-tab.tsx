@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Calendar, Clock, MapPin, Pencil, Trash2, DollarSign } from "lucide-react"
 import type { AgendaItem, Trip } from "@/lib/types"
-import { generateId } from "@/lib/utils"
+import { generateId, formatCurrency } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 
 interface AgendaTabProps {
@@ -421,7 +421,7 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
                       {item.estimatedCost !== undefined && (
                         <div className="mt-2 flex items-center">
                           <DollarSign className="h-4 w-4 mr-2 text-emerald-500" />
-                          <span>Estimated Cost: ${item.estimatedCost.toFixed(2)}</span>
+                          <span>Estimated Cost: {formatCurrency(item.estimatedCost)}</span>
                         </div>
                       )}
                     </CardContent>

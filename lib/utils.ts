@@ -19,6 +19,34 @@ export function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("en-US", options)
 }
 
+// Currency functions
+export function getCurrencyPreference(): string {
+  if (typeof window === "undefined") return "USD"
+  return localStorage.getItem("currencyPreference") || "USD"
+}
+
+export function setCurrencyPreference(currency: string): void {
+  if (typeof window === "undefined") return
+  localStorage.setItem("currencyPreference", currency)
+}
+
+// Exchange rates (simplified - in a real app, you would use an API)
+const exchangeRates = {
+  USD: 1,
+  IDR: 15500, // 1 USD = 15500 IDR (approximate)
+}
+
+export function formatCurrency(amount: number): string {
+  const currency = getCurrencyPreference()
+  const convertedAmount = amount * exchangeRates[currency as keyof typeof exchangeRates]
+
+  if (currency === "IDR") {
+    return `Rp ${Math.round(convertedAmount).toLocaleString()}`
+  }
+
+  return `$${convertedAmount.toFixed(2)}`
+}
+
 // Add this function to ensure backward compatibility with existing trips
 export function migrateTrip(trip: any): Trip {
   // Ensure all expenses have participants

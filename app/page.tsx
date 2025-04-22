@@ -7,9 +7,10 @@ import { PlusCircle, MapPin, Calendar, DollarSign, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { Trip } from "@/lib/types"
-import { formatDate, getTrips, saveTrips } from "@/lib/utils"
+import { formatDate, getTrips, saveTrips, formatCurrency } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 import { InstallPWA } from "@/components/install-pwa"
+import { SettingsDialog } from "@/components/settings-dialog"
 
 export default function Home() {
   const [trips, setTrips] = useState<Trip[]>([])
@@ -39,7 +40,10 @@ export default function Home() {
     <main className="container max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">TripMate</h1>
-        <InstallPWA />
+        <div className="flex items-center gap-2">
+          <SettingsDialog />
+          <InstallPWA />
+        </div>
       </div>
 
       <div className="flex items-center justify-between mb-6">
@@ -85,8 +89,8 @@ export default function Home() {
                     <div className="flex items-center">
                       <DollarSign className="h-4 w-4 mr-2" />
                       <span>
-                        Budget: ${trip.budget.toFixed(2)} • Spent: $
-                        {trip.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+                        Budget: {formatCurrency(trip.budget)} • Spent:{" "}
+                        {formatCurrency(trip.expenses.reduce((sum, exp) => sum + exp.amount, 0))}
                       </span>
                     </div>
                   </div>
