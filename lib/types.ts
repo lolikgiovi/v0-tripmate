@@ -28,7 +28,13 @@ export interface Expense {
   amount: number
   date: string
   category?: string
-  paidBy: string
-  participants: string[] // Add this line to track who participated in the expense
+  payers: PayerContribution[] // Replace paidBy with payers array
+  participants: string[] // Who participated in the expense
   notes?: string
+}
+
+// New interface for payer contributions
+export interface PayerContribution {
+  name: string
+  amount: number
 }

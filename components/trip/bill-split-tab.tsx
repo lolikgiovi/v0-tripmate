@@ -25,8 +25,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
     calculateSettlements()
   }, [trip.expenses])
 
-  // Calculate settlements function remains the same since all calculations
-  // are done in USD and only converted to display currency when rendering
+  // Updated to handle multiple payers
   const calculateSettlements = () => {
     if (trip.expenses.length === 0) {
       setSettlements([])
@@ -43,9 +42,11 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
       owes[traveler] = 0
     })
 
-    // Calculate what each person paid
+    // Calculate what each person paid - now using payers array
     trip.expenses.forEach((expense) => {
-      paid[expense.paidBy] = (paid[expense.paidBy] || 0) + expense.amount
+      expense.payers.forEach((payer) => {
+        paid[payer.name] = (paid[payer.name] || 0) + payer.amount
+      })
     })
 
     // Calculate what each person owes based on participation
@@ -121,14 +122,16 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
     setSettlements(newSettlements)
   }
 
-  // Calculate how much each person paid
+  // Calculate how much each person paid - updated for multiple payers
   const expensesByTraveler: Record<string, number> = {}
   trip.travelers.forEach((traveler) => {
     expensesByTraveler[traveler] = 0
   })
 
   trip.expenses.forEach((expense) => {
-    expensesByTraveler[expense.paidBy] = (expensesByTraveler[expense.paidBy] || 0) + expense.amount
+    expense.payers.forEach((payer) => {
+      expensesByTraveler[payer.name] = (expensesByTraveler[payer.name] || 0) + payer.amount
+    })
   })
 
   // Calculate total expenses
@@ -201,10 +204,11 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
             <CardContent>
               <div className="space-y-2">
                 {trip.travelers.map((traveler) => {
-                  // Calculate what each person paid
+                  // Calculate what each person paid - updated for multiple payers
                   const paid = trip.expenses
-                    .filter((expense) => expense.paidBy === traveler)
-                    .reduce((sum, expense) => sum + expense.amount, 0)
+                    .flatMap((expense) => expense.payers)
+                    .filter((payer) => payer.name === traveler)
+                    .reduce((sum, payer) => sum + payer.amount, 0)
 
                   // Calculate what each person owes based on participation
                   const owes = trip.expenses

@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { Trip } from "./types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -14,15 +15,58 @@ export function formatDate(dateString: string): string {
   })
 }
 
-export function getTrips(): any[] {
-  if (typeof window === "undefined") return []
-  const trips = localStorage.getItem("trips")
-  return trips ? JSON.parse(trips) : []
+// Add this function to ensure backward compatibility with existing trips
+export function migrateTrip(trip: any): Trip {
+  // Ensure all expenses have participants
+  if (trip.expenses) {
+    trip.expenses = trip.expenses.map((expense: any) => {
+      // Add participants if missing
+      if (!expense.participants) {
+        expense.participants = [...trip.travelers]
+      }
+
+      // Convert old paidBy to new payers array
+      if (expense.paidBy && !expense.payers) {
+        expense.payers = [
+          {
+            name: expense.paidBy,
+            amount: expense.amount,
+          },
+        ]
+        // Keep paidBy for backward compatibility
+      }
+
+      return expense
+    })
+  }
+
+  return trip as Trip
 }
 
-export function saveTrips(trips: any[]): void {
+export function getTrips(): Trip[] {
+  if (typeof window === "undefined") return []
+
+  const tripsJson = localStorage.getItem("trips")
+  if (!tripsJson) return []
+
+  try {
+    const trips = JSON.parse(tripsJson)
+    // Migrate each trip to ensure it has the latest structure
+    return trips.map(migrateTrip)
+  } catch (error) {
+    console.error("Error parsing trips from localStorage", error)
+    return []
+  }
+}
+
+export function saveTrips(trips: Trip[]): void {
   if (typeof window === "undefined") return
-  localStorage.setItem("trips", JSON.stringify(trips))
+
+  try {
+    localStorage.setItem("trips", JSON.stringify(trips))
+  } catch (error) {
+    console.error("Error saving trips to localStorage", error)
+  }
 }
 
 export function generateId(): string {
