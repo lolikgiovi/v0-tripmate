@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Calendar, Clock, MapPin, Pencil, Trash2, DollarSign } from "lucide-react"
 import type { AgendaItem, Trip } from "@/lib/types"
-import { generateId, formatCurrency } from "@/lib/utils"
+import { generateId, formatCurrency, convertToUSD, convertFromUSD, getCurrencySymbol } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 
 interface AgendaTabProps {
@@ -29,6 +29,12 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
   const [endTime, setEndTime] = useState("")
   const [location, setLocation] = useState("")
   const [estimatedCost, setEstimatedCost] = useState("")
+  const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol())
+
+  // Update currency symbol when component mounts
+  useEffect(() => {
+    setCurrencySymbol(getCurrencySymbol())
+  }, [])
 
   const resetForm = () => {
     setTitle("")
@@ -49,7 +55,8 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
     setStartTime(item.startTime || "")
     setEndTime(item.endTime || "")
     setLocation(item.location || "")
-    setEstimatedCost(item.estimatedCost ? item.estimatedCost.toString() : "")
+    // Convert the stored USD amount to the display currency
+    setEstimatedCost(item.estimatedCost ? convertFromUSD(item.estimatedCost).toString() : "")
     setIsEditDialogOpen(true)
   }
 
@@ -67,7 +74,8 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
       startTime,
       endTime,
       location,
-      estimatedCost: estimatedCost ? Number.parseFloat(estimatedCost) : undefined,
+      // Convert the display currency amount to USD for storage
+      estimatedCost: estimatedCost ? convertToUSD(Number.parseFloat(estimatedCost)) : undefined,
     }
 
     const updatedTrip = {
@@ -104,7 +112,8 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
       startTime,
       endTime,
       location,
-      estimatedCost: estimatedCost ? Number.parseFloat(estimatedCost) : undefined,
+      // Convert the display currency amount to USD for storage
+      estimatedCost: estimatedCost ? convertToUSD(Number.parseFloat(estimatedCost)) : undefined,
     }
 
     const updatedTrip = {
@@ -227,7 +236,7 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="estimatedCost">Estimated Cost ($)</Label>
+                <Label htmlFor="estimatedCost">Estimated Cost ({currencySymbol})</Label>
                 <Input
                   id="estimatedCost"
                   type="number"
@@ -318,7 +327,7 @@ export function AgendaTab({ trip, updateTrip }: AgendaTabProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-estimatedCost">Estimated Cost ($)</Label>
+                <Label htmlFor="edit-estimatedCost">Estimated Cost ({currencySymbol})</Label>
                 <Input
                   id="edit-estimatedCost"
                   type="number"

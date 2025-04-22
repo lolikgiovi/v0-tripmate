@@ -25,7 +25,8 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
     calculateSettlements()
   }, [trip.expenses])
 
-  // Replace the calculateSettlements function with this updated version
+  // Calculate settlements function remains the same since all calculations
+  // are done in USD and only converted to display currency when rendering
   const calculateSettlements = () => {
     if (trip.expenses.length === 0) {
       setSettlements([])

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PlusCircle, Receipt, Calendar, DollarSign, User, Pencil, Trash2, Users } from "lucide-react"
 import type { Expense, Trip } from "@/lib/types"
-import { generateId, formatDate, formatCurrency } from "@/lib/utils"
+import { generateId, formatDate, formatCurrency, convertToUSD, convertFromUSD, getCurrencySymbol } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 
 interface ExpensesTabProps {
@@ -28,11 +28,14 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   const [category, setCategory] = useState("")
   const [paidBy, setPaidBy] = useState("")
   const [notes, setNotes] = useState("")
-
-  // Add participants state
   const [participants, setParticipants] = useState<string[]>([])
+  const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol())
 
-  // Update resetForm to include participants
+  // Update currency symbol when component mounts
+  useEffect(() => {
+    setCurrencySymbol(getCurrencySymbol())
+  }, [])
+
   const resetForm = () => {
     setTitle("")
     setAmount("")
@@ -44,11 +47,11 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     setCurrentExpense(null)
   }
 
-  // Update openEditDialog to include participants
   const openEditDialog = (expense: Expense) => {
     setCurrentExpense(expense)
     setTitle(expense.title)
-    setAmount(expense.amount.toString())
+    // Convert the stored USD amount to the display currency
+    setAmount(convertFromUSD(expense.amount).toString())
     setDate(expense.date)
     setCategory(expense.category || "")
     setPaidBy(expense.paidBy)
@@ -57,7 +60,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     setIsEditDialogOpen(true)
   }
 
-  // Update handleAddExpense to include participants
   const handleAddExpense = () => {
     if (!title || !amount || !date || !paidBy || participants.length === 0) {
       alert("Please fill in all required fields and select at least one participant")
@@ -67,7 +69,8 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     const newExpense: Expense = {
       id: generateId(),
       title,
-      amount: Number.parseFloat(amount),
+      // Convert the display currency amount to USD for storage
+      amount: convertToUSD(Number.parseFloat(amount)),
       date,
       category: category || undefined,
       paidBy,
@@ -85,7 +88,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     resetForm()
   }
 
-  // Update handleEditExpense to include participants
   const handleEditExpense = () => {
     if (!currentExpense || !title || !amount || !date || !paidBy || participants.length === 0) {
       alert("Please fill in all required fields and select at least one participant")
@@ -95,7 +97,8 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     const updatedExpense: Expense = {
       ...currentExpense,
       title,
-      amount: Number.parseFloat(amount),
+      // Convert the display currency amount to USD for storage
+      amount: convertToUSD(Number.parseFloat(amount)),
       date,
       category: category || undefined,
       paidBy,
@@ -125,7 +128,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     }
   }
 
-  // Add a function to toggle "All" participants
   const toggleAllParticipants = () => {
     if (participants.length === trip.travelers.length) {
       setParticipants([])
@@ -134,7 +136,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     }
   }
 
-  // Add a function to toggle individual participant
   const toggleParticipant = (traveler: string) => {
     if (participants.includes(traveler)) {
       setParticipants(participants.filter((p) => p !== traveler))
@@ -198,7 +199,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount ($) *</Label>
+                <Label htmlFor="amount">Amount ({currencySymbol}) *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -331,7 +332,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="edit-amount">Amount ($) *</Label>
+                <Label htmlFor="edit-amount">Amount ({currencySymbol}) *</Label>
                 <Input
                   id="edit-amount"
                   type="number"
@@ -557,12 +558,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                         <div className="flex items-center">
                           <Receipt className="h-4 w-4 mr-1 text-emerald-500" />
                           <span>{expense.category}</span>
-                        </div>
-                      )}
-                      {expense.participants && expense.participants.length > 0 && (
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-1 text-emerald-500" />
-                          <span>Shared with {expense.participants.join(", ")}</span>
                         </div>
                       )}
                     </div>

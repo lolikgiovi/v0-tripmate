@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Edit, Plus, X, AlertTriangle } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { convertToUSD, convertFromUSD, getCurrencySymbol } from "@/lib/utils"
 
 interface EditTripDialogProps {
   trip: Trip
@@ -29,13 +30,14 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
   const [description, setDescription] = useState(trip.description)
   const [startDate, setStartDate] = useState(trip.startDate)
   const [endDate, setEndDate] = useState(trip.endDate)
-  const [budget, setBudget] = useState(trip.budget.toString())
+  const [budget, setBudget] = useState("")
   const [destinations, setDestinations] = useState<string[]>([...trip.destinations])
   const [newDestination, setNewDestination] = useState("")
   const [travelers, setTravelers] = useState<string[]>([...trip.travelers])
   const [newTraveler, setNewTraveler] = useState("")
   const [removedTravelers, setRemovedTravelers] = useState<string[]>([])
   const [dateWarning, setDateWarning] = useState(false)
+  const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol())
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -44,11 +46,13 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       setDescription(trip.description)
       setStartDate(trip.startDate)
       setEndDate(trip.endDate)
-      setBudget(trip.budget.toString())
+      // Convert the stored USD amount to the display currency
+      setBudget(convertFromUSD(trip.budget).toString())
       setDestinations([...trip.destinations])
       setTravelers([...trip.travelers])
       setRemovedTravelers([])
       setDateWarning(false)
+      setCurrencySymbol(getCurrencySymbol())
     }
   }, [isOpen, trip])
 
@@ -116,7 +120,8 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       description,
       startDate,
       endDate,
-      budget: Number.parseFloat(budget) || 0,
+      // Convert the display currency amount to USD for storage
+      budget: convertToUSD(Number.parseFloat(budget) || 0),
       destinations,
       travelers,
     }
@@ -207,7 +212,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="budget">Budget</Label>
+            <Label htmlFor="budget">Budget ({currencySymbol})</Label>
             <Input
               id="budget"
               type="number"
