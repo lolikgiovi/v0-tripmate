@@ -101,7 +101,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
     setBillDetails(details)
   }
 
-  // Updated to handle multiple payers
+  // Fix the settlement calculation to ensure exact shares
   const calculateSettlements = () => {
     if (trip.expenses.length === 0) {
       setSettlements([])
@@ -169,7 +169,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
         continue
       }
 
-      // Calculate the amount to transfer
+      // Calculate the amount to transfer - use Math.min to get the exact amount
       const amount = Math.min(Math.abs(remainingBalances[debtor]), remainingBalances[creditor])
 
       // Only create a settlement if the amount is significant
@@ -177,7 +177,8 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
         newSettlements.push({
           from: debtor,
           to: creditor,
-          amount: Number.parseFloat(amount.toFixed(2)),
+          // Don't round the amount - keep it exact to avoid discrepancies
+          amount: amount,
         })
 
         // Update remaining balances

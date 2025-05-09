@@ -90,32 +90,27 @@ const exchangeRates = {
   IDR: 15500, // 1 USD = 15500 IDR (approximate)
 }
 
-// Format currency for display based on user preference
+// Update the formatCurrency function to handle currency correctly
 export function formatCurrency(amount: number): string {
   const currency = getCurrencyPreference()
-  const convertedAmount = amount * exchangeRates[currency as keyof typeof exchangeRates]
 
+  // Don't convert the amount - display it as is in the preferred currency format
   if (currency === "IDR") {
-    return `Rp ${Math.round(convertedAmount).toLocaleString()}`
+    return `Rp ${Math.round(amount).toLocaleString("id-ID").replace(/,/g, ".")}`
   }
 
-  return `$${convertedAmount.toFixed(2)}`
+  return `$${amount.toFixed(2)}`
 }
 
-// Convert amount from display currency to USD (for storage)
+// Remove these conversion functions as we're no longer converting between currencies for storage
+// We'll keep the function signatures to avoid breaking existing code, but they'll now be identity functions
+
 export function convertToUSD(amount: number): number {
-  const currency = getCurrencyPreference()
-  if (currency === "USD") return amount
-
-  return amount / exchangeRates[currency as keyof typeof exchangeRates]
+  return amount // No conversion, return as is
 }
 
-// Convert amount from USD to display currency (for input fields)
 export function convertFromUSD(amount: number): number {
-  const currency = getCurrencyPreference()
-  if (currency === "USD") return amount
-
-  return amount * exchangeRates[currency as keyof typeof exchangeRates]
+  return amount // No conversion, return as is
 }
 
 // Get currency symbol for the current preference

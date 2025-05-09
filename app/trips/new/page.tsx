@@ -91,7 +91,7 @@ export default function NewTrip() {
     }
   }
 
-  // Update the handleSubmit function to parse the budget correctly
+  // Update the handleSubmit function to correctly handle budget conversion
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -106,6 +106,7 @@ export default function NewTrip() {
       if (currencySymbol === "Rp") {
         // For IDR: remove all dots and parse as integer
         budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
+        // IMPORTANT: Don't convert to USD here, as the Trip object should store the value in the original currency
       } else {
         // For USD: parse as float
         budgetValue = Number.parseFloat(budget)

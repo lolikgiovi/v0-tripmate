@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Edit, Plus, X, AlertTriangle } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { convertToUSD, convertFromUSD, getCurrencySymbol } from "@/lib/utils"
+import { convertFromUSD, getCurrencySymbol } from "@/lib/utils"
 
 interface EditTripDialogProps {
   trip: Trip
@@ -139,7 +139,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
     }
   }
 
-  // Update the handleSubmit function to parse the budget correctly
+  // Update the handleSubmit function to correctly handle budget conversion
   const handleSubmit = () => {
     if (!name || !startDate || !endDate || destinations.length === 0 || travelers.length === 0) {
       alert("Please fill in all required fields")
@@ -152,6 +152,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       if (currencySymbol === "Rp") {
         // For IDR: remove all dots and parse as integer
         budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
+        // IMPORTANT: Don't convert to USD here, as the Trip object should store the value in the original currency
       } else {
         // For USD: parse as float
         budgetValue = Number.parseFloat(budget)
@@ -165,8 +166,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       description,
       startDate,
       endDate,
-      // Convert the display currency amount to USD for storage
-      budget: convertToUSD(budgetValue || 0),
+      budget: budgetValue || 0,
       destinations,
       travelers,
     }
