@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ChevronLeft, Plus, X } from "lucide-react"
 import type { Trip } from "@/lib/types"
-import { generateId, getTrips, saveTrips } from "@/lib/utils"
+import { generateId, getTrips, saveTrips, getCurrencySymbol } from "@/lib/utils"
 
 export default function NewTrip() {
   const router = useRouter()
@@ -24,11 +24,25 @@ export default function NewTrip() {
   const [newDestination, setNewDestination] = useState("")
   const [travelers, setTravelers] = useState<string[]>([])
   const [newTraveler, setNewTraveler] = useState("")
+  const [currencySymbol, setCurrencySymbol] = useState("Rp")
 
+  // Get the currency symbol when component mounts
+  useEffect(() => {
+    setCurrencySymbol(getCurrencySymbol())
+  }, [])
+
+  // Update the addDestination function to check for unique destinations
   const addDestination = () => {
-    if (newDestination.trim() !== "") {
-      setDestinations([...destinations, newDestination.trim()])
+    const trimmedDestination = newDestination.trim()
+    if (trimmedDestination !== "") {
+      // Check if the destination already exists (case-insensitive)
+      if (destinations.some((dest) => dest.toLowerCase() === trimmedDestination.toLowerCase())) {
+        alert("This destination already exists. Please add a unique destination.")
+        return
+      }
+      setDestinations([...destinations, trimmedDestination])
       setNewDestination("")
+      // Don't blur the input to keep keyboard visible
     }
   }
 
@@ -37,9 +51,16 @@ export default function NewTrip() {
   }
 
   const addTraveler = () => {
-    if (newTraveler.trim() !== "") {
-      setTravelers([...travelers, newTraveler.trim()])
+    const trimmedName = newTraveler.trim()
+    if (trimmedName !== "") {
+      // Check if the name already exists (case-insensitive)
+      if (travelers.some((traveler) => traveler.toLowerCase() === trimmedName.toLowerCase())) {
+        alert("This traveler name already exists. Please use a unique name.")
+        return
+      }
+      setTravelers([...travelers, trimmedName])
       setNewTraveler("")
+      // Don't blur the input to keep keyboard visible
     }
   }
 
@@ -47,6 +68,30 @@ export default function NewTrip() {
     setTravelers(travelers.filter((_, i) => i !== index))
   }
 
+  // Add a new function to format the budget input with thousands separators for IDR
+  const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove all non-numeric characters
+    const numericValue = e.target.value.replace(/[^\d]/g, "")
+
+    if (numericValue === "") {
+      setBudget("")
+      return
+    }
+
+    const numberValue = Number.parseInt(numericValue, 10)
+
+    // Format differently based on currency
+    if (currencySymbol === "Rp") {
+      // For IDR: no decimal places, use dot as thousands separator
+      const formatted = numberValue.toLocaleString("id-ID").replace(/,/g, ".")
+      setBudget(formatted)
+    } else {
+      // For USD: keep decimal places
+      setBudget(numberValue.toString())
+    }
+  }
+
+  // Update the handleSubmit function to parse the budget correctly
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -55,13 +100,25 @@ export default function NewTrip() {
       return
     }
 
+    // Parse the budget value correctly based on the format
+    let budgetValue = 0
+    if (budget) {
+      if (currencySymbol === "Rp") {
+        // For IDR: remove all dots and parse as integer
+        budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
+      } else {
+        // For USD: parse as float
+        budgetValue = Number.parseFloat(budget)
+      }
+    }
+
     const newTrip: Trip = {
       id: generateId(),
       name,
       description,
       startDate,
       endDate,
-      budget: Number.parseFloat(budget) || 0,
+      budget: budgetValue || 0,
       destinations,
       travelers,
       agenda: [],
@@ -124,17 +181,10 @@ export default function NewTrip() {
               </div>
             </div>
 
+            {/* Update the budget input field to use the new handler */}
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget ($)</Label>
-              <Input
-                id="budget"
-                type="number"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
+              <Label htmlFor="budget">Budget ({currencySymbol})</Label>
+              <Input id="budget" value={budget} onChange={handleBudgetChange} placeholder="0" className="text-right" />
             </div>
 
             <div className="space-y-2">

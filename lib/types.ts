@@ -7,19 +7,8 @@ export interface Trip {
   budget: number
   destinations: string[]
   travelers: string[]
-  agenda: AgendaItem[]
   expenses: Expense[]
-}
-
-export interface AgendaItem {
-  id: string
-  title: string
-  description?: string
-  date: string
-  startTime?: string
-  endTime?: string
-  location?: string
-  estimatedCost?: number
+  agenda: AgendaItem[]
 }
 
 export interface Expense {
@@ -37,4 +26,15 @@ export interface Expense {
 export interface PayerContribution {
   name: string
   amount: number
+}
+
+export interface AgendaItem {
+  id: string
+  title: string
+  description?: string
+  date: string
+  startTime?: string
+  endTime?: string
+  location?: string
+  estimatedCost?: number
 }

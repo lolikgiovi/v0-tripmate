@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -65,27 +67,28 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
 
     // Check if new date range is smaller than original
     if (newStart > originalStart || newEnd < originalEnd) {
-      // Check if any agenda items would be outside the new range
-      const hasOutOfRangeItems = trip.agenda.some((item) => {
-        const itemDate = new Date(item.date)
-        return itemDate < newStart || itemDate > newEnd
-      })
-
       // Check if any expenses would be outside the new range
       const hasOutOfRangeExpenses = trip.expenses.some((expense) => {
         const expenseDate = new Date(expense.date)
         return expenseDate < newStart || expenseDate > newEnd
       })
 
-      setDateWarning(hasOutOfRangeItems || hasOutOfRangeExpenses)
+      setDateWarning(hasOutOfRangeExpenses)
     } else {
       setDateWarning(false)
     }
   }, [startDate, endDate, trip])
 
+  // Update the addDestination function to check for unique destinations
   const addDestination = () => {
-    if (newDestination.trim() !== "") {
-      setDestinations([...destinations, newDestination.trim()])
+    const trimmedDestination = newDestination.trim()
+    if (trimmedDestination !== "") {
+      // Check if the destination already exists (case-insensitive)
+      if (destinations.some((dest) => dest.toLowerCase() === trimmedDestination.toLowerCase())) {
+        alert("This destination already exists. Please add a unique destination.")
+        return
+      }
+      setDestinations([...destinations, trimmedDestination])
       setNewDestination("")
     }
   }
@@ -95,8 +98,14 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
   }
 
   const addTraveler = () => {
-    if (newTraveler.trim() !== "" && !travelers.includes(newTraveler.trim())) {
-      setTravelers([...travelers, newTraveler.trim()])
+    const trimmedName = newTraveler.trim()
+    if (trimmedName !== "") {
+      // Check if the name already exists (case-insensitive)
+      if (travelers.some((traveler) => traveler.toLowerCase() === trimmedName.toLowerCase())) {
+        alert("This traveler name already exists. Please use a unique name.")
+        return
+      }
+      setTravelers([...travelers, trimmedName])
       setNewTraveler("")
     }
   }
@@ -107,10 +116,46 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
     setTravelers(travelers.filter((_, i) => i !== index))
   }
 
+  // Add a new function to format the budget input with thousands separators for IDR
+  const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove all non-numeric characters
+    const numericValue = e.target.value.replace(/[^\d]/g, "")
+
+    if (numericValue === "") {
+      setBudget("")
+      return
+    }
+
+    const numberValue = Number.parseInt(numericValue, 10)
+
+    // Format differently based on currency
+    if (currencySymbol === "Rp") {
+      // For IDR: no decimal places, use dot as thousands separator
+      const formatted = numberValue.toLocaleString("id-ID").replace(/,/g, ".")
+      setBudget(formatted)
+    } else {
+      // For USD: keep decimal places
+      setBudget(numberValue.toString())
+    }
+  }
+
+  // Update the handleSubmit function to parse the budget correctly
   const handleSubmit = () => {
     if (!name || !startDate || !endDate || destinations.length === 0 || travelers.length === 0) {
       alert("Please fill in all required fields")
       return
+    }
+
+    // Parse the budget value correctly based on the format
+    let budgetValue = 0
+    if (budget) {
+      if (currencySymbol === "Rp") {
+        // For IDR: remove all dots and parse as integer
+        budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
+      } else {
+        // For USD: parse as float
+        budgetValue = Number.parseFloat(budget)
+      }
     }
 
     // Create updated trip with basic info
@@ -121,7 +166,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       startDate,
       endDate,
       // Convert the display currency amount to USD for storage
-      budget: convertToUSD(Number.parseFloat(budget) || 0),
+      budget: convertToUSD(budgetValue || 0),
       destinations,
       travelers,
     }
@@ -144,12 +189,6 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
     // Handle date changes (cascading update)
     const newStartDate = new Date(startDate)
     const newEndDate = new Date(endDate)
-
-    // Filter out agenda items outside the new date range
-    updatedTrip.agenda = updatedTrip.agenda.filter((item) => {
-      const itemDate = new Date(item.date)
-      return itemDate >= newStartDate && itemDate <= newEndDate
-    })
 
     // Filter out expenses outside the new date range
     updatedTrip.expenses = updatedTrip.expenses.filter((expense) => {
@@ -213,14 +252,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
 
           <div className="space-y-2">
             <Label htmlFor="budget">Budget ({currencySymbol})</Label>
-            <Input
-              id="budget"
-              type="number"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-              min="0"
-              step="0.01"
-            />
+            <Input id="budget" value={budget} onChange={handleBudgetChange} className="text-right" />
           </div>
 
           <div className="space-y-2">

@@ -75,8 +75,8 @@ export function generateId(): string {
 
 // Update the currency functions in utils.ts
 export function getCurrencyPreference(): string {
-  if (typeof window === "undefined") return "USD"
-  return localStorage.getItem("currencyPreference") || "USD"
+  if (typeof window === "undefined") return "IDR"
+  return localStorage.getItem("currencyPreference") || "IDR"
 }
 
 export function setCurrencyPreference(currency: string): void {
@@ -122,4 +122,15 @@ export function convertFromUSD(amount: number): number {
 export function getCurrencySymbol(): string {
   const currency = getCurrencyPreference()
   return currency === "IDR" ? "Rp" : "$"
+}
+
+// Add a function to format budget display with proper separators
+export function formatBudgetInput(value: number, currency: string): string {
+  if (currency === "IDR") {
+    // For IDR: no decimal places, use dot as thousands separator
+    return Math.round(value).toLocaleString("id-ID").replace(/,/g, ".")
+  } else {
+    // For USD: keep decimal places
+    return value.toString()
+  }
 }

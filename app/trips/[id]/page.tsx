@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChevronLeft, Calendar, MapPin, Users, DollarSign } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { formatDate, getTrips, saveTrips, formatCurrency } from "@/lib/utils"
-import { AgendaTab } from "@/components/trip/agenda-tab"
 import { ExpensesTab } from "@/components/trip/expenses-tab"
 import { BillSplitTab } from "@/components/trip/bill-split-tab"
 import { EditTripDialog } from "@/components/trip/edit-trip-dialog"
@@ -100,16 +99,11 @@ export default function TripDetails({ params }: { params: { id: string } }) {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="agenda" className="w-full">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+      <Tabs defaultValue="expenses" className="w-full">
+        <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="split">Bill Split</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="agenda">
-          <AgendaTab trip={trip} updateTrip={updateTrip} />
-        </TabsContent>
 
         <TabsContent value="expenses">
           <ExpensesTab trip={trip} updateTrip={updateTrip} />

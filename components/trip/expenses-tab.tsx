@@ -370,239 +370,242 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Trip Expenses</h3>
-        <div className="flex gap-2">
-          {/* Sort dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
-                {getCurrentSortOption().icon}
-                <span className="hidden sm:inline">Sort by:</span> {getCurrentSortOption().label}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Sort Expenses</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                {sortOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.id}
-                    onClick={() => setSortOption(option.id)}
-                    className={sortOption === option.id ? "bg-muted" : ""}
-                  >
-                    {option.icon}
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-500 hover:bg-emerald-600">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Add Expense</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Dinner"
+                    required
+                  />
+                </div>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-emerald-500 hover:bg-emerald-600">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Expense
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle>Add Expense</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh] pr-4">
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title *</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Dinner"
-                      required
-                    />
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Total Amount ({currencySymbol}) *</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date *</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    min={trip.startDate}
+                    max={trip.endDate}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Food">Food</SelectItem>
+                      <SelectItem value="Accommodation">Accommodation</SelectItem>
+                      <SelectItem value="Transportation">Transportation</SelectItem>
+                      <SelectItem value="Activities">Activities</SelectItem>
+                      <SelectItem value="Shopping">Shopping</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Payers Section */}
+                <div className="space-y-2 border p-3 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <Label>Payers *</Label>
+                    <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Total Amount ({currencySymbol}) *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="date">Date *</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      min={trip.startDate}
-                      max={trip.endDate}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Food">Food</SelectItem>
-                        <SelectItem value="Accommodation">Accommodation</SelectItem>
-                        <SelectItem value="Transportation">Transportation</SelectItem>
-                        <SelectItem value="Activities">Activities</SelectItem>
-                        <SelectItem value="Shopping">Shopping</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Payers Section */}
-                  <div className="space-y-2 border p-3 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <Label>Payers *</Label>
-                      <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="payerName" className="text-xs">
+                        Name
+                      </Label>
+                      <Select value={newPayerName} onValueChange={setNewPayerName}>
+                        <SelectTrigger id="payerName">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {trip.travelers.map((traveler) => (
+                            <SelectItem key={traveler} value={traveler}>
+                              {traveler}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="payerName" className="text-xs">
-                          Name
-                        </Label>
-                        <Select value={newPayerName} onValueChange={setNewPayerName}>
-                          <SelectTrigger id="payerName">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {trip.travelers.map((traveler) => (
-                              <SelectItem key={traveler} value={traveler}>
-                                {traveler}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="payerAmount" className="text-xs">
-                          Amount ({currencySymbol})
-                        </Label>
-                        <div className="flex">
-                          <Input
-                            id="payerAmount"
-                            type="number"
-                            value={newPayerAmount}
-                            onChange={(e) => setNewPayerAmount(e.target.value)}
-                            placeholder="0.00"
-                            min="0"
-                            step="0.01"
-                            className="rounded-r-none"
-                          />
-                          <Button
-                            type="button"
-                            onClick={addPayer}
-                            className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {payerError && <p className="text-sm text-red-500">{payerError}</p>}
-
-                    {payers.length > 0 && (
-                      <div className="mt-2 space-y-2">
-                        {payers.map((payer, index) => (
-                          <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                            <span>{payer.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span>{formatCurrency(payer.amount)}</span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-red-500"
-                                onClick={() => removePayer(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Participants Section */}
-                  <div className="space-y-2">
-                    <Label>Participants *</Label>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
+                    <div>
+                      <Label htmlFor="payerAmount" className="text-xs">
+                        Amount ({currencySymbol})
+                      </Label>
+                      <div className="flex">
+                        <Input
+                          id="payerAmount"
+                          type="number"
+                          value={newPayerAmount}
+                          onChange={(e) => setNewPayerAmount(e.target.value)}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="rounded-r-none"
+                        />
                         <Button
                           type="button"
-                          variant={participants.length === trip.travelers.length ? "default" : "outline"}
-                          size="sm"
-                          onClick={toggleAllParticipants}
-                          className={
-                            participants.length === trip.travelers.length ? "bg-emerald-500 hover:bg-emerald-600" : ""
-                          }
+                          onClick={addPayer}
+                          className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
                         >
-                          All Travelers
+                          <Plus className="h-4 w-4" />
                         </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        {trip.travelers.map((traveler) => (
-                          <Button
-                            key={traveler}
-                            type="button"
-                            variant={participants.includes(traveler) ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => toggleParticipant(traveler)}
-                            className={participants.includes(traveler) ? "bg-emerald-500 hover:bg-emerald-600" : ""}
-                          >
-                            {traveler}
-                          </Button>
-                        ))}
                       </div>
                     </div>
                   </div>
 
+                  {payerError && <p className="text-sm text-red-500">{payerError}</p>}
+
+                  {payers.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {payers.map((payer, index) => (
+                        <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                          <span>{payer.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span>{formatCurrency(payer.amount)}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-500"
+                              onClick={() => removePayer(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Participants Section */}
+                <div className="space-y-2">
+                  <Label>Participants *</Label>
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Notes</Label>
-                    <Input
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Additional details"
-                    />
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        type="button"
+                        variant={participants.length === trip.travelers.length ? "default" : "outline"}
+                        size="sm"
+                        onClick={toggleAllParticipants}
+                        className={
+                          participants.length === trip.travelers.length ? "bg-emerald-500 hover:bg-emerald-600" : ""
+                        }
+                      >
+                        All Travelers
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {trip.travelers.map((traveler) => (
+                        <Button
+                          key={traveler}
+                          type="button"
+                          variant={participants.includes(traveler) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => toggleParticipant(traveler)}
+                          className={participants.includes(traveler) ? "bg-emerald-500 hover:bg-emerald-600" : ""}
+                        >
+                          {traveler}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </ScrollArea>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsAddDialogOpen(false)
-                    resetForm()
-                  }}
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Input
+                    id="notes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Additional details"
+                  />
+                </div>
+              </div>
+            </ScrollArea>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddDialogOpen(false)
+                  resetForm()
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleAddExpense} className="bg-emerald-500 hover:bg-emerald-600">
+                Add Expense
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Sort dropdown moved below header */}
+      <div className="mb-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-1 w-full justify-between">
+              <div className="flex items-center">
+                {getCurrentSortOption().icon}
+                <span>Sort by:</span>
+              </div>
+              <span className="font-medium">{getCurrentSortOption().label}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Sort Expenses</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              {sortOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.id}
+                  onClick={() => setSortOption(option.id)}
+                  className={sortOption === option.id ? "bg-muted" : ""}
                 >
-                  Cancel
-                </Button>
-                <Button type="button" onClick={handleAddExpense} className="bg-emerald-500 hover:bg-emerald-600">
-                  Add Expense
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+                  {option.icon}
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
