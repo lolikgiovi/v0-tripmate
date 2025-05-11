@@ -9,9 +9,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ChevronLeft, Plus, X } from "lucide-react"
+import { ChevronLeft, Plus, X, AlertCircle } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { generateId, getTrips, saveTrips, getCurrencySymbol } from "@/lib/utils"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function NewTrip() {
   const router = useRouter()
@@ -25,6 +26,9 @@ export default function NewTrip() {
   const [travelers, setTravelers] = useState<string[]>([])
   const [newTraveler, setNewTraveler] = useState("")
   const [currencySymbol, setCurrencySymbol] = useState("Rp")
+
+  // Validation errors
+  const [errors, setErrors] = useState<string[]>([])
 
   // Get the currency symbol when component mounts
   useEffect(() => {
@@ -91,14 +95,44 @@ export default function NewTrip() {
     }
   }
 
+  // Validate form fields and return array of missing fields
+  const validateForm = (): string[] => {
+    const newErrors: string[] = []
+
+    if (!name.trim()) {
+      newErrors.push("Trip Name")
+    }
+
+    if (!startDate) {
+      newErrors.push("Start Date")
+    }
+
+    if (!endDate) {
+      newErrors.push("End Date")
+    }
+
+    if (travelers.length === 0) {
+      newErrors.push("Travelers (at least one)")
+    }
+
+    return newErrors
+  }
+
   // Update the handleSubmit function to correctly handle budget conversion
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!name || !startDate || !endDate || destinations.length === 0 || travelers.length === 0) {
-      alert("Please fill in all required fields")
+    // Validate form
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
+      // Scroll to top to show errors
+      window.scrollTo(0, 0)
       return
     }
+
+    // Clear any previous errors
+    setErrors([])
 
     // Parse the budget value correctly based on the format
     let budgetValue = 0
@@ -106,7 +140,6 @@ export default function NewTrip() {
       if (currencySymbol === "Rp") {
         // For IDR: remove all dots and parse as integer
         budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
-        // IMPORTANT: Don't convert to USD here, as the Trip object should store the value in the original currency
       } else {
         // For USD: parse as float
         budgetValue = Number.parseFloat(budget)
@@ -143,6 +176,14 @@ export default function NewTrip() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Display validation errors if any */}
+            {errors.length > 0 && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Please fill in the following required fields: {errors.join(", ")}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="name">Trip Name *</Label>
               <Input
@@ -150,7 +191,6 @@ export default function NewTrip() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Summer Vacation 2023"
-                required
               />
             </div>
 
@@ -168,17 +208,11 @@ export default function NewTrip() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date *</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                />
+                <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date *</Label>
-                <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
 
@@ -189,7 +223,7 @@ export default function NewTrip() {
             </div>
 
             <div className="space-y-2">
-              <Label>Destinations *</Label>
+              <Label>Destinations</Label>
               <div className="flex space-x-2">
                 <Input
                   value={newDestination}
@@ -261,9 +295,14 @@ export default function NewTrip() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600">
-              Create Trip
-            </Button>
+            <div className="flex w-full gap-2">
+              <Button type="button" variant="secondary" onClick={() => router.push("/")} className="flex-1">
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+                Create Trip
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

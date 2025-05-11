@@ -23,9 +23,10 @@ import {
   SortAsc,
   SortDesc,
   AlignJustify,
+  AlertCircle,
 } from "lucide-react"
 import type { Expense, Trip, PayerContribution } from "@/lib/types"
-import { generateId, formatDate, formatCurrency, convertToUSD, convertFromUSD, getCurrencySymbol } from "@/lib/utils"
+import { generateId, formatDate, formatCurrency, getCurrencySymbol } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -37,6 +38,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 // Define sort options
 type SortOption = {
@@ -58,6 +62,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
 
   const [title, setTitle] = useState("")
   const [amount, setAmount] = useState("")
+  const [formattedAmount, setFormattedAmount] = useState("")
   const [date, setDate] = useState("")
   const [category, setCategory] = useState("")
   const [notes, setNotes] = useState("")
@@ -69,6 +74,15 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   const [newPayerName, setNewPayerName] = useState("")
   const [newPayerAmount, setNewPayerAmount] = useState("")
   const [payerError, setPayerError] = useState("")
+
+  // Single payer state
+  const [singlePayer, setSinglePayer] = useState("")
+
+  // Payment type state (single or multiple)
+  const [paymentType, setPaymentType] = useState<"single" | "multiple">("single")
+
+  // Validation errors
+  const [errors, setErrors] = useState<string[]>([])
 
   // Sorting state
   const [sortOption, setSortOption] = useState<string>("dateDesc")
@@ -141,7 +155,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0)
 
   // Calculate remaining amount to be allocated
-  const remainingAmount = amount ? Math.max(0, convertToUSD(Number(amount)) - totalPaid) : 0
+  const remainingAmount = amount ? Math.max(0, Number(amount) - totalPaid) : 0
 
   // Format the remaining amount for display
   const formattedRemainingAmount = formatCurrency(remainingAmount)
@@ -149,32 +163,43 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   const resetForm = () => {
     setTitle("")
     setAmount("")
+    setFormattedAmount("")
     setDate("")
     setCategory("")
     setPayers([])
+    setSinglePayer("")
     setParticipants([])
     setNotes("")
     setCurrentExpense(null)
     setNewPayerName("")
     setNewPayerAmount("")
     setPayerError("")
+    setPaymentType("single")
+    setErrors([])
   }
 
   const openEditDialog = (expense: Expense) => {
     setCurrentExpense(expense)
     setTitle(expense.title)
-    // Convert the stored USD amount to the display currency
-    setAmount(convertFromUSD(expense.amount).toString())
+    setAmount(expense.amount.toString())
+
+    // Format amount for IDR
+    if (currencySymbol === "Rp") {
+      const formatted = Number(expense.amount).toLocaleString("id-ID").replace(/,/g, ".")
+      setFormattedAmount(formatted)
+    }
+
     setDate(expense.date)
     setCategory(expense.category || "")
 
-    // Convert payer amounts from USD to display currency
-    setPayers(
-      expense.payers.map((payer) => ({
-        name: payer.name,
-        amount: payer.amount,
-      })),
-    )
+    // Determine if it's a single payer or multiple payers
+    if (expense.payers.length === 1) {
+      setPaymentType("single")
+      setSinglePayer(expense.payers[0].name)
+    } else {
+      setPaymentType("multiple")
+      setPayers([...expense.payers])
+    }
 
     setParticipants(expense.participants || [])
     setNotes(expense.notes || "")
@@ -192,8 +217,8 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
       return
     }
 
-    // Convert input amount to USD for storage
-    const payerAmountUSD = convertToUSD(Number(newPayerAmount))
+    // Convert input amount to number
+    const payerAmount = Number(newPayerAmount)
 
     // Check if payer already exists
     const existingPayerIndex = payers.findIndex((p) => p.name === newPayerName)
@@ -201,11 +226,11 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     if (existingPayerIndex >= 0) {
       // Update existing payer
       const updatedPayers = [...payers]
-      updatedPayers[existingPayerIndex].amount += payerAmountUSD
+      updatedPayers[existingPayerIndex].amount += payerAmount
       setPayers(updatedPayers)
     } else {
       // Add new payer
-      setPayers([...payers, { name: newPayerName, amount: payerAmountUSD }])
+      setPayers([...payers, { name: newPayerName, amount: payerAmount }])
     }
 
     setNewPayerName("")
@@ -217,10 +242,41 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
     setPayers(payers.filter((_, i) => i !== index))
   }
 
+  // Validate form fields
+  const validateForm = (): string[] => {
+    const newErrors: string[] = []
+
+    if (!title.trim()) {
+      newErrors.push("Title")
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      newErrors.push("Amount")
+    }
+
+    if (!date) {
+      newErrors.push("Date")
+    }
+
+    if (participants.length === 0) {
+      newErrors.push("Participants (at least one)")
+    }
+
+    if (paymentType === "single" && !singlePayer) {
+      newErrors.push("Payer")
+    }
+
+    if (paymentType === "multiple" && payers.length === 0) {
+      newErrors.push("Payers (at least one)")
+    }
+
+    return newErrors
+  }
+
   const validatePayersTotal = (): boolean => {
     if (!amount || payers.length === 0) return false
 
-    const totalAmount = convertToUSD(Number(amount))
+    const totalAmount = Number(amount)
     const totalPaid = payers.reduce((sum, payer) => sum + payer.amount, 0)
 
     // Allow a small rounding error (0.01)
@@ -228,31 +284,35 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   }
 
   const handleAddExpense = () => {
-    if (!title || !amount || !date || participants.length === 0) {
-      alert("Please fill in all required fields and select at least one participant")
+    // Validate form
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
       return
     }
 
-    if (payers.length === 0) {
-      alert("Please add at least one payer")
+    // For multiple payers, validate total matches expense amount
+    if (paymentType === "multiple" && !validatePayersTotal()) {
+      setErrors([
+        `The total paid amount must equal the expense amount (${formatCurrency(Number(amount))}). Current total: ${formatCurrency(totalPaid)}`,
+      ])
       return
     }
 
-    if (!validatePayersTotal()) {
-      alert(
-        `The total paid amount must equal the expense amount (${formatCurrency(convertToUSD(Number(amount)))}). Current total: ${formatCurrency(totalPaid)}`,
-      )
-      return
-    }
+    // Clear any previous errors
+    setErrors([])
+
+    // Create payers array based on payment type
+    const expensePayers: PayerContribution[] =
+      paymentType === "single" ? [{ name: singlePayer, amount: Number(amount) }] : payers
 
     const newExpense: Expense = {
       id: generateId(),
       title,
-      // Convert the display currency amount to USD for storage
-      amount: convertToUSD(Number.parseFloat(amount)),
+      amount: Number(amount),
       date,
       category: category || undefined,
-      payers: payers,
+      payers: expensePayers,
       participants,
       notes: notes || undefined,
     }
@@ -269,31 +329,37 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
   }
 
   const handleEditExpense = () => {
-    if (!currentExpense || !title || !amount || !date || participants.length === 0) {
-      alert("Please fill in all required fields and select at least one participant")
+    // Validate form
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
       return
     }
 
-    if (payers.length === 0) {
-      alert("Please add at least one payer")
+    // For multiple payers, validate total matches expense amount
+    if (paymentType === "multiple" && !validatePayersTotal()) {
+      setErrors([
+        `The total paid amount must equal the expense amount (${formatCurrency(Number(amount))}). Current total: ${formatCurrency(totalPaid)}`,
+      ])
       return
     }
 
-    if (!validatePayersTotal()) {
-      alert(
-        `The total paid amount must equal the expense amount (${formatCurrency(convertToUSD(Number(amount)))}). Current total: ${formatCurrency(totalPaid)}`,
-      )
-      return
-    }
+    // Clear any previous errors
+    setErrors([])
+
+    if (!currentExpense) return
+
+    // Create payers array based on payment type
+    const expensePayers: PayerContribution[] =
+      paymentType === "single" ? [{ name: singlePayer, amount: Number(amount) }] : payers
 
     const updatedExpense: Expense = {
       ...currentExpense,
       title,
-      // Convert the display currency amount to USD for storage
-      amount: convertToUSD(Number.parseFloat(amount)),
+      amount: Number(amount),
       date,
       category: category || undefined,
-      payers: payers,
+      payers: expensePayers,
       participants,
       notes: notes || undefined,
     }
@@ -382,28 +448,53 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
             </DialogHeader>
             <ScrollArea className="max-h-[60vh] pr-4">
               <div className="grid gap-4 py-4">
+                {/* Display validation errors if any */}
+                {errors.length > 0 && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {errors.length === 1 && errors[0].includes("total paid amount")
+                        ? errors[0]
+                        : `Please fill in the following required fields: ${errors.join(", ")}`}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Dinner"
-                    required
-                  />
+                  <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Dinner" />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="amount">Total Amount ({currencySymbol}) *</Label>
                   <Input
                     id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    value={currencySymbol === "Rp" ? formattedAmount : amount}
+                    onChange={(e) => {
+                      if (currencySymbol === "Rp") {
+                        // Remove all non-numeric characters
+                        const numericValue = e.target.value.replace(/[^\d]/g, "")
+
+                        if (numericValue === "") {
+                          setAmount("")
+                          setFormattedAmount("")
+                          return
+                        }
+
+                        const numberValue = Number.parseInt(numericValue, 10)
+
+                        // Format with dot as thousands separator
+                        const formatted = numberValue.toLocaleString("id-ID").replace(/,/g, ".")
+                        setFormattedAmount(formatted)
+                        setAmount(numberValue.toString())
+                      } else {
+                        setAmount(e.target.value)
+                      }
+                    }}
                     placeholder="0.00"
                     min="0"
                     step="0.01"
-                    required
+                    className="text-right"
                   />
                 </div>
 
@@ -416,7 +507,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                     onChange={(e) => setDate(e.target.value)}
                     min={trip.startDate}
                     max={trip.endDate}
-                    required
                   />
                 </div>
 
@@ -437,81 +527,124 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                   </Select>
                 </div>
 
-                {/* Payers Section */}
+                {/* Payment Type Selection */}
                 <div className="space-y-2 border p-3 rounded-md">
-                  <div className="flex justify-between items-center">
-                    <Label>Payers *</Label>
-                    <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label htmlFor="payerName" className="text-xs">
-                        Name
+                  <Label>Payment Type *</Label>
+                  <RadioGroup
+                    value={paymentType}
+                    onValueChange={(value) => setPaymentType(value as "single" | "multiple")}
+                    className="flex flex-col space-y-1"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="single" id="single" />
+                      <Label htmlFor="single" className="font-normal">
+                        Single Payer
                       </Label>
-                      <Select value={newPayerName} onValueChange={setNewPayerName}>
-                        <SelectTrigger id="payerName">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {trip.travelers.map((traveler) => (
-                            <SelectItem key={traveler} value={traveler}>
-                              {traveler}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
-                    <div>
-                      <Label htmlFor="payerAmount" className="text-xs">
-                        Amount ({currencySymbol})
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="multiple" id="multiple" />
+                      <Label htmlFor="multiple" className="font-normal">
+                        Multiple Payers
                       </Label>
-                      <div className="flex">
-                        <Input
-                          id="payerAmount"
-                          type="number"
-                          value={newPayerAmount}
-                          onChange={(e) => setNewPayerAmount(e.target.value)}
-                          placeholder="0.00"
-                          min="0"
-                          step="0.01"
-                          className="rounded-r-none"
-                        />
-                        <Button
-                          type="button"
-                          onClick={addPayer}
-                          className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Conditional Payer Section */}
+                <Tabs value={paymentType} className="w-full">
+                  {/* Single Payer Tab */}
+                  <TabsContent value="single" className="space-y-2 border p-3 rounded-md mt-0">
+                    <Label htmlFor="singlePayer">Paid By *</Label>
+                    <Select value={singlePayer} onValueChange={setSinglePayer}>
+                      <SelectTrigger id="singlePayer">
+                        <SelectValue placeholder="Select payer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {trip.travelers.map((traveler) => (
+                          <SelectItem key={traveler} value={traveler}>
+                            {traveler}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TabsContent>
+
+                  {/* Multiple Payers Tab */}
+                  <TabsContent value="multiple" className="space-y-2 border p-3 rounded-md mt-0">
+                    <div className="flex justify-between items-center">
+                      <Label>Payers *</Label>
+                      <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="payerName" className="text-xs">
+                          Name
+                        </Label>
+                        <Select value={newPayerName} onValueChange={setNewPayerName}>
+                          <SelectTrigger id="payerName">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {trip.travelers.map((traveler) => (
+                              <SelectItem key={traveler} value={traveler}>
+                                {traveler}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="payerAmount" className="text-xs">
+                          Amount ({currencySymbol})
+                        </Label>
+                        <div className="flex">
+                          <Input
+                            id="payerAmount"
+                            type="number"
+                            value={newPayerAmount}
+                            onChange={(e) => setNewPayerAmount(e.target.value)}
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                            className="rounded-r-none text-right"
+                          />
+                          <Button
+                            type="button"
+                            onClick={addPayer}
+                            className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {payerError && <p className="text-sm text-red-500">{payerError}</p>}
+                    {payerError && <p className="text-sm text-red-500">{payerError}</p>}
 
-                  {payers.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {payers.map((payer, index) => (
-                        <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                          <span>{payer.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span>{formatCurrency(payer.amount)}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-red-500"
-                              onClick={() => removePayer(index)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                    {payers.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {payers.map((payer, index) => (
+                          <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                            <span>{payer.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{formatCurrency(payer.amount)}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-red-500"
+                                onClick={() => removePayer(index)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
 
                 {/* Participants Section */}
                 <div className="space-y-2">
@@ -561,7 +694,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
             <DialogFooter>
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   setIsAddDialogOpen(false)
                   resetForm()
@@ -615,21 +748,52 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
             <div className="grid gap-4 py-4">
+              {/* Display validation errors if any */}
+              {errors.length > 0 && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {errors.length === 1 && errors[0].includes("total paid amount")
+                      ? errors[0]
+                      : `Please fill in the following required fields: ${errors.join(", ")}`}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="edit-title">Title *</Label>
-                <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-amount">Total Amount ({currencySymbol}) *</Label>
                 <Input
                   id="edit-amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  value={currencySymbol === "Rp" ? formattedAmount : amount}
+                  onChange={(e) => {
+                    if (currencySymbol === "Rp") {
+                      // Remove all non-numeric characters
+                      const numericValue = e.target.value.replace(/[^\d]/g, "")
+
+                      if (numericValue === "") {
+                        setAmount("")
+                        setFormattedAmount("")
+                        return
+                      }
+
+                      const numberValue = Number.parseInt(numericValue, 10)
+
+                      // Format with dot as thousands separator
+                      const formatted = numberValue.toLocaleString("id-ID").replace(/,/g, ".")
+                      setFormattedAmount(formatted)
+                      setAmount(numberValue.toString())
+                    } else {
+                      setAmount(e.target.value)
+                    }
+                  }}
                   min="0"
                   step="0.01"
-                  required
+                  className="text-right"
                 />
               </div>
 
@@ -642,7 +806,6 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                   onChange={(e) => setDate(e.target.value)}
                   min={trip.startDate}
                   max={trip.endDate}
-                  required
                 />
               </div>
 
@@ -663,81 +826,124 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                 </Select>
               </div>
 
-              {/* Payers Section */}
+              {/* Payment Type Selection */}
               <div className="space-y-2 border p-3 rounded-md">
-                <div className="flex justify-between items-center">
-                  <Label>Payers *</Label>
-                  <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="edit-payerName" className="text-xs">
-                      Name
+                <Label>Payment Type *</Label>
+                <RadioGroup
+                  value={paymentType}
+                  onValueChange={(value) => setPaymentType(value as "single" | "multiple")}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="single" id="edit-single" />
+                    <Label htmlFor="edit-single" className="font-normal">
+                      Single Payer
                     </Label>
-                    <Select value={newPayerName} onValueChange={setNewPayerName}>
-                      <SelectTrigger id="edit-payerName">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {trip.travelers.map((traveler) => (
-                          <SelectItem key={traveler} value={traveler}>
-                            {traveler}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="edit-payerAmount" className="text-xs">
-                      Amount ({currencySymbol})
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="multiple" id="edit-multiple" />
+                    <Label htmlFor="edit-multiple" className="font-normal">
+                      Multiple Payers
                     </Label>
-                    <div className="flex">
-                      <Input
-                        id="edit-payerAmount"
-                        type="number"
-                        value={newPayerAmount}
-                        onChange={(e) => setNewPayerAmount(e.target.value)}
-                        placeholder="0.00"
-                        min="0"
-                        step="0.01"
-                        className="rounded-r-none"
-                      />
-                      <Button
-                        type="button"
-                        onClick={addPayer}
-                        className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Conditional Payer Section */}
+              <Tabs value={paymentType} className="w-full">
+                {/* Single Payer Tab */}
+                <TabsContent value="single" className="space-y-2 border p-3 rounded-md mt-0">
+                  <Label htmlFor="edit-singlePayer">Paid By *</Label>
+                  <Select value={singlePayer} onValueChange={setSinglePayer}>
+                    <SelectTrigger id="edit-singlePayer">
+                      <SelectValue placeholder="Select payer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trip.travelers.map((traveler) => (
+                        <SelectItem key={traveler} value={traveler}>
+                          {traveler}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TabsContent>
+
+                {/* Multiple Payers Tab */}
+                <TabsContent value="multiple" className="space-y-2 border p-3 rounded-md mt-0">
+                  <div className="flex justify-between items-center">
+                    <Label>Payers *</Label>
+                    <div className="text-sm text-muted-foreground">Remaining: {formattedRemainingAmount}</div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="edit-payerName" className="text-xs">
+                        Name
+                      </Label>
+                      <Select value={newPayerName} onValueChange={setNewPayerName}>
+                        <SelectTrigger id="edit-payerName">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {trip.travelers.map((traveler) => (
+                            <SelectItem key={traveler} value={traveler}>
+                              {traveler}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-payerAmount" className="text-xs">
+                        Amount ({currencySymbol})
+                      </Label>
+                      <div className="flex">
+                        <Input
+                          id="edit-payerAmount"
+                          type="number"
+                          value={newPayerAmount}
+                          onChange={(e) => setNewPayerAmount(e.target.value)}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          className="rounded-r-none text-right"
+                        />
+                        <Button
+                          type="button"
+                          onClick={addPayer}
+                          className="rounded-l-none bg-emerald-500 hover:bg-emerald-600"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {payerError && <p className="text-sm text-red-500">{payerError}</p>}
+                  {payerError && <p className="text-sm text-red-500">{payerError}</p>}
 
-                {payers.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    {payers.map((payer, index) => (
-                      <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
-                        <span>{payer.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span>{formatCurrency(payer.amount)}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 text-red-500"
-                            onClick={() => removePayer(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                  {payers.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {payers.map((payer, index) => (
+                        <div key={index} className="flex justify-between items-center bg-muted p-2 rounded-md">
+                          <span>{payer.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span>{formatCurrency(payer.amount)}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-500"
+                              onClick={() => removePayer(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
 
               {/* Participants Section */}
               <div className="space-y-2">
@@ -787,7 +993,7 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setIsEditDialogOpen(false)
                 resetForm()
@@ -895,12 +1101,16 @@ export function ExpensesTab({ trip, updateTrip }: ExpensesTabProps) {
                         <User className="h-4 w-4 mr-1 text-emerald-500" />
                         <span>
                           Paid by:{" "}
-                          {expense.payers.map((payer, i) => (
-                            <span key={payer.name}>
-                              {i > 0 && ", "}
-                              {payer.name} ({formatCurrency(payer.amount)})
-                            </span>
-                          ))}
+                          {expense.payers.length === 1 ? (
+                            <span>{expense.payers[0].name}</span>
+                          ) : (
+                            expense.payers.map((payer, i) => (
+                              <span key={payer.name}>
+                                {i > 0 && ", "}
+                                {payer.name} ({formatCurrency(payer.amount)})
+                              </span>
+                            ))
+                          )}
                         </span>
                       </div>
 

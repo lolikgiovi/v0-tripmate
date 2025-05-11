@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Edit, Plus, X, AlertTriangle } from "lucide-react"
+import { Edit, Plus, X, AlertTriangle, AlertCircle } from "lucide-react"
 import type { Trip } from "@/lib/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { convertFromUSD, getCurrencySymbol } from "@/lib/utils"
@@ -41,6 +41,9 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
   const [dateWarning, setDateWarning] = useState(false)
   const [currencySymbol, setCurrencySymbol] = useState(getCurrencySymbol())
 
+  // Validation errors
+  const [errors, setErrors] = useState<string[]>([])
+
   // Reset form when dialog opens
   useEffect(() => {
     if (isOpen) {
@@ -55,6 +58,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       setRemovedTravelers([])
       setDateWarning(false)
       setCurrencySymbol(getCurrencySymbol())
+      setErrors([])
     }
   }, [isOpen, trip])
 
@@ -139,12 +143,40 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
     }
   }
 
+  // Validate form fields and return array of missing fields
+  const validateForm = (): string[] => {
+    const newErrors: string[] = []
+
+    if (!name.trim()) {
+      newErrors.push("Trip Name")
+    }
+
+    if (!startDate) {
+      newErrors.push("Start Date")
+    }
+
+    if (!endDate) {
+      newErrors.push("End Date")
+    }
+
+    if (travelers.length === 0) {
+      newErrors.push("Travelers (at least one)")
+    }
+
+    return newErrors
+  }
+
   // Update the handleSubmit function to correctly handle budget conversion
   const handleSubmit = () => {
-    if (!name || !startDate || !endDate || destinations.length === 0 || travelers.length === 0) {
-      alert("Please fill in all required fields")
+    // Validate form
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors)
       return
     }
+
+    // Clear any previous errors
+    setErrors([])
 
     // Parse the budget value correctly based on the format
     let budgetValue = 0
@@ -152,7 +184,6 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
       if (currencySymbol === "Rp") {
         // For IDR: remove all dots and parse as integer
         budgetValue = Number.parseInt(budget.replace(/\./g, ""), 10)
-        // IMPORTANT: Don't convert to USD here, as the Trip object should store the value in the original currency
       } else {
         // For USD: parse as float
         budgetValue = Number.parseFloat(budget)
@@ -213,6 +244,14 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
           <DialogDescription>Update your trip details</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* Display validation errors if any */}
+          {errors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Please fill in the following required fields: {errors.join(", ")}</AlertDescription>
+            </Alert>
+          )}
+
           {dateWarning && (
             <Alert variant="warning" className="bg-amber-50 text-amber-800 border-amber-300">
               <AlertTriangle className="h-4 w-4" />
@@ -225,7 +264,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
 
           <div className="space-y-2">
             <Label htmlFor="name">Trip Name *</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
           <div className="space-y-2">
@@ -236,17 +275,11 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date *</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-              />
+              <Input id="startDate" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date *</Label>
-              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+              <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
 
@@ -256,7 +289,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Destinations *</Label>
+            <Label>Destinations</Label>
             <div className="flex space-x-2">
               <Input
                 value={newDestination}
@@ -328,7 +361,7 @@ export function EditTripDialog({ trip, updateTrip }: EditTripDialogProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="secondary" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} className="bg-emerald-500 hover:bg-emerald-600">
