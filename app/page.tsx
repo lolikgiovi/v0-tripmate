@@ -11,6 +11,7 @@ import { formatDate, getTrips, saveTrips, formatCurrency } from "@/lib/utils"
 import { EmptyState } from "@/components/empty-state"
 import { InstallPWA } from "@/components/install-pwa"
 import { SettingsDialog } from "@/components/settings-dialog"
+import { SupportButton } from "@/components/support-button"
 
 export default function Home() {
   const [trips, setTrips] = useState<Trip[]>([])
@@ -41,6 +42,7 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">TripMate</h1>
         <div className="flex items-center gap-2">
+          {trips.length > 0 && <SupportButton />}
           <SettingsDialog />
           <InstallPWA />
         </div>
@@ -71,7 +73,15 @@ export default function Home() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xl">{trip.name}</CardTitle>
                   <CardDescription className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" /> {trip.destinations.join(", ")}
+                    {trip.destinations && trip.destinations.length > 0 ? (
+                      <>
+                        <MapPin className="h-4 w-4 mr-1 fill-current" /> {trip.destinations.join(", ")}
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4 mr-1 stroke-current fill-none" /> No destinations
+                      </>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pb-2">
@@ -113,6 +123,13 @@ export default function Home() {
               </CardFooter>
             </Card>
           ))}
+        </div>
+      )}
+
+      {trips.length > 0 && (
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground mb-2">Enjoying TripMate? Consider supporting the developer!</p>
+          <SupportButton variant="default" className="bg-pink-500 hover:bg-pink-600 text-white border-none" />
         </div>
       )}
     </main>
