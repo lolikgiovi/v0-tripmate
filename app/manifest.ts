@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TripMate - Trip Planning Made Easy",
-    short_name: "TripMate",
+    name: "MainBagi - Trip Planning Made Easy",
+    short_name: "MainBagi",
     description: "Plan your trips, manage destinations, track expenses, and split bills with friends",
     start_url: "/",
     display: "standalone",

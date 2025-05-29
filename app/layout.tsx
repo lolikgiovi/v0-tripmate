@@ -7,14 +7,14 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TripMate - Trip Planning Made Easy",
+  title: "MainBagi - Trip Planning Made Easy",
   description: "Plan your trips, manage destinations, track expenses, and split bills with friends",
   manifest: "/manifest.json",
   themeColor: "#10b981",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "TripMate",
+    title: "MainBagi",
   },
   viewport: "width=device-width, initial-scale=1, maximum-scale=1",
     generator: 'v0.dev'

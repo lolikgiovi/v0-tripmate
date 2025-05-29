@@ -40,7 +40,7 @@ export default function Home() {
   return (
     <main className="container max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">TripMate</h1>
+        <h1 className="text-3xl font-bold">MainBagi</h1>
         <div className="flex items-center gap-2">
           {trips.length > 0 && <SupportButton />}
           <SettingsDialog />
@@ -128,7 +128,7 @@ export default function Home() {
 
       {trips.length > 0 && (
         <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground mb-2">Enjoying TripMate? Consider supporting the developer!</p>
+          <p className="text-sm text-muted-foreground mb-2">Enjoying MainBagi? Consider supporting the developer!</p>
           <SupportButton variant="default" className="bg-pink-500 hover:bg-pink-600 text-white border-none" />
         </div>
       )}
