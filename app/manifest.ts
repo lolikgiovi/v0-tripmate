@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MainBagi - Trip Planning Made Easy",
+    name: "MainBagi - Split Bill Jadi Lebih Gampang!",
     short_name: "MainBagi",
-    description: "Plan your trips, manage destinations, track expenses, and split bills with friends",
+    description: "Jalan-jalan ramean bareng temen? itung bill-nya pake MainBagi aja!",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

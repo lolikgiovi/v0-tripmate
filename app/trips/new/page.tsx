@@ -190,17 +190,17 @@ export default function NewTrip() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Summer Vacation 2023"
+                placeholder="Bali 2025 bareng Temen Kantor"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="A brief description of your trip"
+                placeholder="Bole tambah keterangan"
                 rows={3}
               />
             </div>
@@ -218,12 +218,12 @@ export default function NewTrip() {
 
             {/* Update the budget input field to use the new handler */}
             <div className="space-y-2">
-              <Label htmlFor="budget">Budget ({currencySymbol})</Label>
+              <Label htmlFor="budget">Budget ({currencySymbol}) (Optional)</Label>
               <Input id="budget" value={budget} onChange={handleBudgetChange} placeholder="0" className="text-right" />
             </div>
 
             <div className="space-y-2">
-              <Label>Destinations</Label>
+              <Label>Destinations (Optional)</Label>
               <div className="flex space-x-2">
                 <Input
                   value={newDestination}

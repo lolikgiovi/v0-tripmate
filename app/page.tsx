@@ -42,7 +42,7 @@ export default function Home() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">MainBagi</h1>
         <div className="flex items-center gap-2">
-          {trips.length > 0 && <SupportButton />}
+          <SupportButton />
           <SettingsDialog />
           <InstallPWA />
         </div>
@@ -123,13 +123,6 @@ export default function Home() {
               </CardFooter>
             </Card>
           ))}
-        </div>
-      )}
-
-      {trips.length > 0 && (
-        <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground mb-2">Enjoying MainBagi? Consider supporting the developer!</p>
-          <SupportButton variant="default" className="bg-pink-500 hover:bg-pink-600 text-white border-none" />
         </div>
       )}
     </main>

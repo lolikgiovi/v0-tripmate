@@ -651,8 +651,7 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
           {/* Add support message at the bottom */}
           <div className="mt-8 p-4 bg-pink-50 rounded-lg border border-pink-100 text-center">
             <p className="text-sm text-pink-700 mb-2">
-              Did this bill splitting feature save you time and awkward conversations? Consider supporting the
-              developer!
+              Kebantu proses split bill-nya? Bolelaa support yg bikin
             </p>
             <SupportButton variant="default" className="bg-pink-500 hover:bg-pink-600 text-white border-none" />
           </div>

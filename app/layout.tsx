@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MainBagi - Trip Planning Made Easy",
-  description: "Plan your trips, manage destinations, track expenses, and split bills with friends",
+  title: "MainBagi - Split Bill Jadi Lebih Gampang!",
+  description: "Jalan-jalan ramean bareng temen? itung bill-nya pake MainBagi aja!",
   manifest: "/manifest.json",
   themeColor: "#10b981",
   appleWebApp: {
