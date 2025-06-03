@@ -232,7 +232,6 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Bill Splitting</h3>
         <div className="flex items-center gap-2">
-          <SupportButton size="sm" />
           <Button
             variant="outline"
             size="sm"
@@ -648,10 +647,9 @@ export function BillSplitTab({ trip }: BillSplitTabProps) {
             </CardContent>
           </Card>
 
-          {/* Add support message at the bottom */}
           <div className="mt-8 p-4 bg-pink-50 rounded-lg border border-pink-100 text-center">
             <p className="text-sm text-pink-700 mb-2">
-              Kebantu proses split bill-nya? Bolelaa support yg bikin
+              Kebantu proses split bill? Bolelaa support yg bikin
             </p>
             <SupportButton variant="default" className="bg-pink-500 hover:bg-pink-600 text-white border-none" />
           </div>
